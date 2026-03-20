@@ -20,10 +20,6 @@
     "url": "https://github.com/bcgov/<%= slug %>#readme",
     "email": "govwordpress@gov.bc.ca"
   },
-  "engines": {
-    "npm": ">= 10.7.0",
-    "node": ">=20.15.1"
-  },
   "main": "index.js",
   "devDependencies": {
     "@playwright/test": "^1.58.0",
