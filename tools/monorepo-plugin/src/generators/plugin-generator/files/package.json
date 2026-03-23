@@ -1,5 +1,5 @@
 {
-    "name": "test-plugin",
+    "name": "<%= slug %>",
     "version": "1.0.0",
     "description": "this is a test of the block plugin generator",
     "author": "The WordPress Contributors",
