@@ -32,7 +32,10 @@ import './editor.scss';
 const Edit = () => {
     return (
         <p {...useBlockProps()}>
-            {__('<%= name %> – hello from the editor!', '<%= slug %>')}
+            {__(
+                'visual-regression-plugin – hello from the editor!',
+                'visual-regression-plugin'
+            )}
         </p>
     );
 };

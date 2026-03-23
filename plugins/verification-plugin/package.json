@@ -1,7 +1,7 @@
 {
-    "name": "<%= slug %>",
+    "name": "verification-plugin",
     "version": "1.0.0",
-    "description": "<%= description %>",
+    "description": "Verification plugin for e2e and visual regression",
     "author": "The WordPress Contributors",
     "license": "GPL-2.0-or-later",
     "main": "build/index.js",
@@ -15,10 +15,10 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/bcgov/<%= slug %>.git"
+        "url": "git+https://github.com/bcgov/verification-plugin.git"
     },
     "bugs": {
-        "url": "https://github.com/bcgov/<%= slug %>#readme",
+        "url": "https://github.com/bcgov/verification-plugin#readme",
         "email": "govwordpress@gov.bc.ca"
     },
     "engines": {

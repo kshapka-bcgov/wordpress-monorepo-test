@@ -32,7 +32,10 @@ import './editor.scss';
 const Edit = () => {
     return (
         <p {...useBlockProps()}>
-            {__('<%= name %> – hello from the editor!', '<%= slug %>')}
+            {__(
+                'verification-plugin – hello from the editor!',
+                'verification-plugin'
+            )}
         </p>
     );
 };

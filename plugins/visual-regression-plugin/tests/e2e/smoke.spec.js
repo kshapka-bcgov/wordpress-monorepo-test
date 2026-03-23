@@ -5,8 +5,8 @@ test( 'sample block can be inserted and rendered on the frontend', async ( {
     editor,
     page,
 } ) => {
-    const BLOCK_NAME = '<%= slug %>/sample-block';
-    const BLOCK_CLASS = '.wp-block-<%= slug %>-sample-block';
+    const BLOCK_NAME = 'visual-regression-plugin/sample-block';
+    const BLOCK_CLASS = '.wp-block-visual-regression-plugin-sample-block';
 
     await admin.createNewPost();
     await editor.insertBlock( { name: BLOCK_NAME } );

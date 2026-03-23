@@ -1,7 +1,7 @@
 {
-    "name": "<%= slug %>",
+    "name": "visual-regression-plugin",
     "version": "1.0.0",
-    "description": "<%= description %>",
+    "description": "Visual regression baseline test plugin",
     "author": "The WordPress Contributors",
     "license": "GPL-2.0-or-later",
     "main": "build/index.js",
@@ -15,10 +15,10 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/bcgov/<%= slug %>.git"
+        "url": "git+https://github.com/bcgov/visual-regression-plugin.git"
     },
     "bugs": {
-        "url": "https://github.com/bcgov/<%= slug %>#readme",
+        "url": "https://github.com/bcgov/visual-regression-plugin#readme",
         "email": "govwordpress@gov.bc.ca"
     },
     "engines": {
