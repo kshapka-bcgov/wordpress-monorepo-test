@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/schema",
-    "$id": "PluginGenerator",
-    "title": "",
+    "$id": "Plugin",
+    "title": "Plugin",
     "type": "object",
     "properties": {
         "name": {

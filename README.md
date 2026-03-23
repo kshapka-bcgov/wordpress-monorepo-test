@@ -36,14 +36,20 @@ Follow the on-screen instructions to generate a standalone or child theme that a
 From the monorepo root, run the plugin generator and then install dependencies:
 
 ```shell
-npx nx generate monorepo-plugin:plugin-generator
+npx nx generate monorepo-plugin:plugin
 pnpm install
 ```
 
-During generation, the CLI will prompt for plugin details (for example name/slug and other setup options).
+During generation, the CLI will prompt for the plugin name and, optionally, a description.
 Use those prompts to configure the plugin you want to scaffold.
 
 The generator creates a new Block Plugin that follows the current monorepo plugin standards.
+
+If `wp-env start` fails with `port is already allocated` (for example `8888`), run:
+
+```shell
+pnpm run wp-env:cleanup
+```
 
 ---
 

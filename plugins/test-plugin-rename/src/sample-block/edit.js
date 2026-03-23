@@ -31,11 +31,11 @@ import './editor.scss';
  */
 export default function Edit() {
     return (
-        <p {...useBlockProps()}>
-            {__(
-                'block-plugin-generator – hello from the editor!',
-                'block-plugin-generator'
-            )}
+        <p { ...useBlockProps() }>
+            { __(
+                'Test Plugin Rename – hello from the editor!',
+                'test-plugin-rename'
+            ) }
         </p>
     );
 }

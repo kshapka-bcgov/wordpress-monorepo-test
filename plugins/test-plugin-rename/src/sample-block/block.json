@@ -1,12 +1,12 @@
 {
     "$schema": "https://schemas.wp.org/trunk/block.json",
     "apiVersion": 3,
-    "name": "block-plugin-generator/sample-block",
+    "name": "test-plugin-rename/sample-block",
     "version": "0.0.1",
-    "title": "block-plugin-generator",
+    "title": "Test Plugin Rename",
     "category": "widgets",
     "icon": "media-document",
-    "description": "A simple generated Block plugin, including some infrastructure tools.",
+    "description": "Test the plugin rename",
     "example": {},
     "supports": {
         "html": false,
@@ -25,7 +25,7 @@
             "margin": true
         }
     },
-    "textdomain": "block-plugin-generator",
+    "textdomain": "test-plugin-rename",
     "editorScript": "file:./index.js",
     "editorStyle": "file:./index.css",
     "style": "file:./style-index.css",

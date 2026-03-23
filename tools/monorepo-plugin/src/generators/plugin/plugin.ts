@@ -5,11 +5,11 @@ import {
     Tree,
 } from '@nx/devkit';
 import * as path from 'path';
-import { PluginGeneratorGeneratorSchema } from './schema';
+import { PluginGeneratorSchema } from './schema';
 
-export async function pluginGeneratorGenerator(
+export async function pluginGenerator(
     tree: Tree,
-    options: PluginGeneratorGeneratorSchema
+    options: PluginGeneratorSchema
 ) {
     const slug = options.name
         .toLowerCase()
@@ -39,4 +39,4 @@ export async function pluginGeneratorGenerator(
     await formatFiles(tree);
 }
 
-export default pluginGeneratorGenerator;
+export default pluginGenerator;

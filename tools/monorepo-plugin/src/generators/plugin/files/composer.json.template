@@ -28,8 +28,8 @@
             "composer validate",
             "composer phpcbf",
             "composer phpcs",
-            "npm run fix:js",
-            "npm run fix:css"
+            "pnpm run fix:js",
+            "pnpm run fix:css"
         ],
         "phpcs": [
             "Bcgov\\Script\\Standards::phpcs"

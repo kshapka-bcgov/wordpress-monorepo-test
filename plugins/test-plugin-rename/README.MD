@@ -1,4 +1,4 @@
-# === block-plugin-generator ===
+# === Test Plugin Rename ===
 
 Contributors: The BCGov Custom Web team
 Tags: block
@@ -7,13 +7,13 @@ Stable tag: 0.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-## == A simple generated Block plugin, including some infrastructure tools. ==
+## == Test the plugin rename ==
 
 This is the long description. No limit, and you can use Markdown (as well as in the following sections).
 
 ## == Installation ==
 
-1. Upload the plugin files to the `/wp-content/plugins/block-plugin-generator` directory.
+1. Upload the plugin files to the `/wp-content/plugins/test-plugin-rename` directory.
 2. Activate the plugin through the 'Plugins' screen in WordPress.
 
 ## == Local Development ==
@@ -21,7 +21,7 @@ This is the long description. No limit, and you can use Markdown (as well as in 
 1. Install dependencies: `pnpm install && composer install`
 2. Start local WordPress: `pnpm run wp-env:start`
 3. In a separate terminal, start block development build: `pnpm start`
-4. Activate the plugin at `http://localhost:8888/wp-admin/plugins.php`
+4. Confirm the plugin is active at `http://localhost:8888/wp-admin/plugins.php`
 
 > **Note:** The block will not appear in the editor until step 1 has been run at
 > least once. The plugin requires a `build/` directory produced by `pnpm start` or

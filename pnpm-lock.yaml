@@ -72,7 +72,7 @@ importers:
         specifier: '*'
         version: 31.4.0(@playwright/test@1.58.2)(@swc/core@1.15.21(@swc/helpers@0.5.19))(@types/eslint@9.6.1)(@types/node@20.19.9)(@types/webpack@4.41.40)(@wordpress/env@10.39.0(@types/node@20.19.9))(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass-embedded@1.97.3)(stylelint-scss@6.14.0(stylelint@16.26.1(typescript@5.9.3)))(type-fest@4.41.0)(typescript@5.9.3)
 
-  plugins/block-plugin-generator:
+  plugins/test-plugin-rename:
     dependencies:
       '@wordpress/block-editor':
         specifier: latest
@@ -3756,10 +3756,6 @@ packages:
     resolution: {integrity: sha512-nypFE7APrPNjdukwTvfb95Tu56OdABksoycYHGPK8fid+OBx/8MnHgo4iESZoRm7ad6S287I3hH5p4pDNa1CRQ==}
     engines: {node: '>=18.12.0', npm: '>=8.19.2'}
     hasBin: true
-
-  '@wordpress/escape-html@3.40.0':
-    resolution: {integrity: sha512-DD6xWVbnw4fGGgO6DFDTJiLj52om0OG4cYHLz7ZhuipmOlEUGljPYOcrj8uxtlh5EFrqHCIPkOya+qQXUHUSBw==}
-    engines: {node: '>=18.12.0', npm: '>=8.19.2'}
 
   '@wordpress/escape-html@3.42.0':
     resolution: {integrity: sha512-dykrMeKAxhwfEImrXfTqKREYGJP2qVIU8q3daUNyNLzrOdwhulAlBzUWXH9zYyY5qEQWrWsnjq4M9f77dO0p4w==}
@@ -15722,7 +15718,7 @@ snapshots:
     dependencies:
       '@types/react': 18.3.28
       '@types/react-dom': 18.3.7(@types/react@18.3.28)
-      '@wordpress/escape-html': 3.40.0
+      '@wordpress/escape-html': 3.42.0
       change-case: 4.1.2
       is-plain-object: 5.0.0
       react: 18.3.1
@@ -15780,8 +15776,6 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
-
-  '@wordpress/escape-html@3.40.0': {}
 
   '@wordpress/escape-html@3.42.0': {}
 

@@ -1,14 +1,14 @@
 {
     "generators": {
-        "theme-generator": {
-            "factory": "./dist/generators/theme-generator/theme-generator",
-            "schema": "./dist/generators/theme-generator/schema.json",
-            "description": "theme-generator generator"
+        "theme": {
+            "factory": "./dist/generators/theme/theme",
+            "schema": "./dist/generators/theme/schema.json",
+            "description": "Generate a WordPress theme"
         },
-        "plugin-generator": {
-            "factory": "./dist/generators/plugin-generator/plugin-generator",
-            "schema": "./dist/generators/plugin-generator/schema.json",
-            "description": "plugin-generator generator"
+        "plugin": {
+            "factory": "./dist/generators/plugin/plugin",
+            "schema": "./dist/generators/plugin/schema.json",
+            "description": "Generate a WordPress block plugin"
         }
     }
 }

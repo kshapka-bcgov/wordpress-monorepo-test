@@ -1,7 +1,7 @@
 {
-    "name": "block-plugin-generator",
+    "name": "test-plugin-rename",
     "version": "1.0.0",
-    "description": "A simple generated Block plugin, including some infrastructure tools.",
+    "description": "Test the plugin rename",
     "author": "The WordPress Contributors",
     "license": "GPL-2.0-or-later",
     "main": "build/index.js",
@@ -15,10 +15,10 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/bcgov/block-plugin-generator.git"
+        "url": "git+https://github.com/bcgov/test-plugin-rename.git"
     },
     "bugs": {
-        "url": "https://github.com/bcgov/block-plugin-generator#readme",
+        "url": "https://github.com/bcgov/test-plugin-rename#readme",
         "email": "govwordpress@gov.bc.ca"
     },
     "engines": {
@@ -29,13 +29,14 @@
         "build:production": "pnpm install --frozen-lockfile && pnpm run test:unit && pnpm run build",
         "format": "wp-scripts format",
         "lint:css": "wp-scripts lint-style",
-        "fix:css": "wp-scripts format:style",
+        "fix:css": "wp-scripts lint-style --fix",
         "lint:md": "wp-scripts lint-markdown",
         "fix:md": "wp-scripts format:markdown",
         "lint:js": "wp-scripts lint-js",
+        "fix:js": "wp-scripts lint-js 'src/**/*.js' --fix",
         "packages-update": "wp-scripts packages-update",
         "start": "wp-scripts start --blocks-manifest",
-        "test:e2e": "wp-scripts test-e2e --passWithNoTests",
+        "test:e2e": "pnpm exec playwright test tests/e2e/smoke.spec.js",
         "test:screenshot": "pnpm exec playwright test",
         "test:screenshot:update": "pnpm exec playwright test --update-snapshots",
         "test:unit": "wp-scripts test-unit-js --passWithNoTests",
