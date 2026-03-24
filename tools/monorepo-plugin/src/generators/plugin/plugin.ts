@@ -8,15 +8,14 @@ import * as path from 'path';
 import { PluginGeneratorSchema } from './schema';
 
 /**
- * Generates a new WordPress plugin project in the monorepo.
- *
- * @param {Tree}                  tree    - The Nx virtual file tree.
- * @param {PluginGeneratorSchema} options - The generator options.
+ * Generates a WordPress plugin.
+ * @param {Tree}                  tree    Filesystem tree.
+ * @param {PluginGeneratorSchema} options Options from schema.json.
  */
 export const pluginGenerator = async (
     tree: Tree,
     options: PluginGeneratorSchema
-): Promise< void > => {
+) => {
     const slug = options.name
         .toLowerCase()
         .replace( /\s+/g, '-' )

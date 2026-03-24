@@ -11,7 +11,7 @@
     "bugs": "",
     "type": "module",
     "main": "index.js",
-    "dependencies": {
+    "peerDependencies": {
         "@playwright/test": "*",
         "@wordpress/scripts": "*"
     }
