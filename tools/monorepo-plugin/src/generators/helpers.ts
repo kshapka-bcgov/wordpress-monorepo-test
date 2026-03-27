@@ -1,5 +1,18 @@
 import { Tree } from '@nx/devkit';
 
+export const slugify = ( value: string ) =>
+    value
+        .toLowerCase()
+        .replace( /\s+/g, '-' )
+        .replace( /[^a-z0-9-]/g, '' );
+
+export const toTitle = ( value: string ) =>
+    value
+        .split( '-' )
+        .filter( Boolean )
+        .map( ( word ) => word.charAt( 0 ).toUpperCase() + word.slice( 1 ) )
+        .join( ' ' );
+
 /**
  * Base interface for WordPress plugins/themes/blocks.
  */

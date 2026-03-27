@@ -9,6 +9,11 @@
             "factory": "./dist/generators/plugin/plugin",
             "schema": "./dist/generators/plugin/schema.json",
             "description": "Generate a WordPress block plugin"
+        },
+        "block": {
+            "factory": "./dist/generators/block/block",
+            "schema": "./dist/generators/block/schema.json",
+            "description": "Generate a new WordPress block in an existing plugin"
         }
     }
 }

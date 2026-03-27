@@ -1,0 +1,46 @@
+{
+    "$schema": "https://json-schema.org/schema",
+    "$id": "Block",
+    "title": "Block",
+    "type": "object",
+    "properties": {
+        "plugin": {
+            "type": "string",
+            "description": "Existing plugin project slug. Example: add-new-block",
+            "$default": {
+                "$source": "argv",
+                "index": 0
+            },
+            "x-prompt": "Which plugin slug should receive the new block?"
+        },
+        "name": {
+            "type": "string",
+            "description": "Block name or slug. Example: hero-banner",
+            "$default": {
+                "$source": "argv",
+                "index": 1
+            },
+            "x-prompt": "What block name would you like to use?"
+        },
+        "title": {
+            "type": "string",
+            "description": "(Optional) Block title shown in inserter. Example: Hero Banner",
+            "$default": {
+                "$source": "argv",
+                "index": 2
+            }
+        },
+        "description": {
+            "type": "string",
+            "description": "(Optional) Block description.",
+            "$default": {
+                "$source": "argv",
+                "index": 3
+            }
+        }
+    },
+    "required": [
+        "plugin",
+        "name"
+    ]
+}
