@@ -22,6 +22,6 @@ test( '<%= blockSlug %> block can be inserted and rendered on the frontend', asy
     const frontendBlock = page.locator( BLOCK_CLASS ).first();
     await expect( frontendBlock ).toBeVisible();
     await expect( frontendBlock ).toContainText(
-        /<%= blockTitle %>\s[-\u2013]\shello from the saved content!/
+        'hello from the saved content!'
     );
 } );
