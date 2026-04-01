@@ -1,3 +1,4 @@
+import { addProjectConfiguration } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { Tree } from '@nx/devkit';
 
@@ -12,6 +13,7 @@ describe( 'block generator', () => {
         tree = createTreeWithEmptyWorkspace();
         await pluginGenerator( tree, {
             name: 'Test Plugin',
+            wpEnvPort: 9002,
             description: 'Description',
         } );
     } );
@@ -20,8 +22,6 @@ describe( 'block generator', () => {
         const options: BlockGeneratorSchema = {
             plugin: 'test-plugin',
             name: 'Hero Banner',
-            title: 'Hero Banner',
-            description: 'Hero block description',
         };
 
         await blockGenerator( tree, options );
@@ -38,7 +38,7 @@ describe( 'block generator', () => {
         const blockJson = JSON.parse( tree.read( blockJsonPath )!.toString() );
         expect( blockJson.name ).toBe( 'test-plugin/hero-banner' );
         expect( blockJson.title ).toBe( 'Hero Banner' );
-        expect( blockJson.description ).toBe( 'Hero block description' );
+        expect( blockJson.description ).toBe( '' );
     } );
 
     it( 'should throw when plugin does not exist', async () => {
@@ -62,5 +62,32 @@ describe( 'block generator', () => {
                 name: 'hero-banner',
             } )
         ).rejects.toThrow( 'already exists' );
+    } );
+
+    it( 'should accept a plugin path under plugins/', async () => {
+        await blockGenerator( tree, {
+            plugin: 'plugins/test-plugin',
+            name: 'Card Grid',
+        } );
+
+        expect(
+            tree.exists( 'plugins/test-plugin/src/card-grid/block.json' )
+        ).toBe( true );
+    } );
+
+    it( 'should throw when project is not a plugin project', async () => {
+        addProjectConfiguration( tree, 'not-a-plugin', {
+            root: 'packages/not-a-plugin',
+            sourceRoot: 'packages/not-a-plugin/src',
+            projectType: 'library',
+            targets: {},
+        } );
+
+        await expect(
+            blockGenerator( tree, {
+                plugin: 'not-a-plugin',
+                name: 'new-block',
+            } )
+        ).rejects.toThrow( 'not a block plugin project' );
     } );
 } );

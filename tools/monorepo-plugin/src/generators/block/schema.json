@@ -6,12 +6,12 @@
     "properties": {
         "plugin": {
             "type": "string",
-            "description": "Existing plugin project slug. Example: add-new-block",
+            "description": "Existing plugin project name. Example: bcgov-wordpress-blocks",
             "$default": {
                 "$source": "argv",
                 "index": 0
             },
-            "x-prompt": "Which plugin slug should receive the new block?"
+            "x-prompt": "Which existing plugin should receive the new block?"
         },
         "name": {
             "type": "string",
@@ -21,22 +21,6 @@
                 "index": 1
             },
             "x-prompt": "What block name would you like to use?"
-        },
-        "title": {
-            "type": "string",
-            "description": "(Optional) Block title shown in inserter. Example: Hero Banner",
-            "$default": {
-                "$source": "argv",
-                "index": 2
-            }
-        },
-        "description": {
-            "type": "string",
-            "description": "(Optional) Block description.",
-            "$default": {
-                "$source": "argv",
-                "index": 3
-            }
         }
     },
     "required": [

@@ -12,41 +12,13 @@ npx nx generate monorepo-plugin:plugin
 
 By default, this creates a plugin with one initial `sample-block`.
 
-You can optionally scaffold up to three initial blocks in the same command using `block1`, `block2`, and `block3` options.
-
 #### Sample Instructions
 
 Create a plugin with the default `sample-block`:
 
 ```shell
-npx nx generate monorepo-plugin:plugin --name="My Plugin" --description="My plugin description"
+npx nx generate monorepo-plugin:plugin --name="My Plugin" --wpEnvPort=9002 --description="My plugin description"
 ```
-
-Create a plugin with one explicit block:
-
-```shell
-npx nx generate monorepo-plugin:plugin --name="My Plugin" --block1Name=hero-banner --block1Title="Hero Banner" --block1Description="Hero block"
-```
-
-Create a plugin with three explicit blocks:
-
-```shell
-npx nx generate monorepo-plugin:plugin --name="Composed Plugin" --description="Plugin description" --block1Name=hero-banner --block1Title="Hero Banner" --block2Name=call-to-action --block3Name=stats-grid
-```
-
-Add additional blocks later to an existing plugin:
-
-```shell
-npx nx generate monorepo-plugin:block composed-plugin testimonial-card
-```
-
-Block names must be unique after slug normalization, so values like `Hero Banner` and `hero-banner` cannot be used together.
-
-#### wp-env Ports In Generated Plugins
-
-Generated plugins use the default `wp-env` ports (development `8888`, tests `8889`) and do not set explicit `port`/`testsPort` values in `.wp-env.json`.
-
-To avoid collisions when running tests across multiple projects, generated Nx targets pass per-plugin `WP_ENV_PORT`/`WP_ENV_TESTS_PORT` values at runtime. Playwright-based targets also set `WP_BASE_URL` to the matching tests URL.
 
 #### Build For Gutenberg Registration
 
@@ -67,14 +39,43 @@ The generated plugin registers blocks from `plugins/<plugin-slug>/build`, so Gut
 ### Create a block in an existing plugin
 
 ```shell
-npx nx generate monorepo-plugin:block <plugin-slug> <block-name>
+npx nx generate monorepo-plugin:block <plugin-name> <block-name>
 ```
+
+This generator is intentionally isolated. It does not create a plugin or compose blocks during plugin generation. It only adds a new block to an existing plugin project under `plugins/`.
+
+Inputs:
+
+- `plugin-name`: the existing Nx project name for the plugin, for example `bcgov-wordpress-blocks`
+- `block-name`: the new block name or slug, for example `hero-banner`
+
+The generator accepts either the Nx project name or a `plugins/...` path:
+
+```shell
+npx nx generate monorepo-plugin:block bcgov-wordpress-blocks hero-banner
+npx nx generate monorepo-plugin:block plugins/bcgov-wordpress-blocks hero-banner
+```
+
+Validation rules:
+
+- the plugin must already exist as a project under `plugins/`
+- the plugin must have a `src` source root
+- the block name must normalize to a non-empty slug
+- the block must not already exist in the target plugin
 
 Example:
 
 ```shell
-npx nx generate monorepo-plugin:block add-new-block hero-banner
+npx nx generate monorepo-plugin:block bcgov-wordpress-blocks hero-banner
 ```
+
+This command generates:
+
+- `plugins/bcgov-wordpress-blocks/src/hero-banner/*`
+- `plugins/bcgov-wordpress-blocks/tests/e2e/hero-banner.spec.js`
+- `plugins/bcgov-wordpress-blocks/tests/screenshot/hero-banner.spec.js`
+
+The block title is derived automatically from the block name, so `hero-banner` becomes `Hero Banner`.
 
 ## Building
 

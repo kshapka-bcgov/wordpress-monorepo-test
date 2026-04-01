@@ -8,6 +8,9 @@ import * as path from 'path';
 import { slugify, toTitle } from '../helpers';
 import { BlockGeneratorSchema } from './schema';
 
+const normalizePluginProjectName = ( plugin: string ) =>
+    plugin.replace( /^plugins\//, '' ).replace( /\/$/, '' );
+
 /**
  * Generates a WordPress block in an existing plugin project.
  * @param {Tree}                 tree    Filesystem tree.
@@ -18,16 +21,21 @@ export const blockGenerator = async (
     options: BlockGeneratorSchema
 ) => {
     const blockSlug = slugify( options.name );
+    const pluginName = normalizePluginProjectName( options.plugin );
+
     if ( ! blockSlug ) {
         throw new Error(
             'Block name must contain at least one alphanumeric character.'
         );
     }
 
-    const pluginConfig = readProjectConfiguration( tree, options.plugin );
-    if ( ! pluginConfig.root?.startsWith( 'plugins/' ) ) {
+    const pluginConfig = readProjectConfiguration( tree, pluginName );
+    if (
+        ! pluginConfig.root?.startsWith( 'plugins/' ) ||
+        ! pluginConfig.sourceRoot?.startsWith( `${ pluginConfig.root }/src` )
+    ) {
         throw new Error(
-            `Project "${ options.plugin }" is not a plugin project under plugins/.`
+            `Project "${ pluginName }" is not a block plugin project under plugins/.`
         );
     }
 
@@ -44,13 +52,11 @@ export const blockGenerator = async (
     generateFiles( tree, path.join( __dirname, 'files' ), pluginConfig.root, {
         pluginSlug,
         blockSlug,
-        blockTitle: options.title ?? toTitle( blockSlug ),
-        blockDescription: options.description ?? '',
+        blockTitle: toTitle( blockSlug ),
+        blockDescription: '',
     } );
 
-    if ( ! options.skipFormat ) {
-        await formatFiles( tree );
-    }
+    await formatFiles( tree );
 };
 
 export default blockGenerator;
