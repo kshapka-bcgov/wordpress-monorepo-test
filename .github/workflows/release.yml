@@ -24,7 +24,7 @@ permissions:
 jobs:
   detect-affected-projects:
     name: Detect affected sub-projects
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.projects == '' }}
+    if: ${{ inputs.projects == '' }}
     uses: ./.github/workflows/detect-affected-projects.yml
 
   resolve-projects:
