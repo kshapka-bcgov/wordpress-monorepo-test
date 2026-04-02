@@ -1,0 +1,161 @@
+name: Release projects to standalone repositories
+
+on:
+  workflow_dispatch:
+    inputs:
+      projects:
+        description: "JSON array of projects (optional, overrides affected detection)"
+        required: false
+      version:
+        description: "Release version (e.g. 1.2.0)"
+        required: true
+
+  push:
+    tags:
+      - "*-v*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  detect-affected-projects:
+    name: Detect affected sub-projects
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.projects == '' }}
+    uses: ./.github/workflows/detect-affected-projects.yml
+
+  resolve-projects:
+    name: Resolve projects for release
+    runs-on: ubuntu-latest
+    needs: detect-affected-projects
+    outputs:
+      projects: ${{ steps.set.outputs.projects }}
+      version: ${{ steps.set.outputs.version }}
+    steps:
+      - name: Resolve projects + version
+        id: set
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
+            PROJECTS='${{ inputs.projects }}'
+          else
+            PROJECTS='${{ needs.detect-affected-projects.outputs.projects }}'
+          fi
+
+          if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
+            echo "No projects to release"
+            echo "projects=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Extract version from tag: plugin-a-v1.2.0 → 1.2.0
+            VERSION="${GITHUB_REF_NAME##*-v}"
+          fi
+
+          echo "projects=$PROJECTS" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  build-and-release:
+    name: Build and release ${{ matrix.project }}
+    needs: resolve-projects
+    if: ${{ needs.resolve-projects.outputs.projects != '' && needs.resolve-projects.outputs.projects != '[]' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.resolve-projects.outputs.projects) }}
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          cache: true
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Composer dependencies
+        run: npx nx run ${{ matrix.project }}:composer-install
+
+      - name: Prepare subtree and build
+        id: build
+        shell: bash
+        run: |
+          PROJECT=${{ matrix.project }}
+          VERSION=${{ needs.resolve-projects.outputs.version }}
+
+          ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
+
+          git subtree split -P "$ROOT" -b split-branch
+          git checkout split-branch
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Build (same as existing workflow)
+          npx wp-scripts build --blocks-manifest --output-path=dist
+
+          git add dist
+          git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
+
+      - name: Generate changelog
+        shell: bash
+        run: |
+          PROJECT=${{ matrix.project }}
+          VERSION=${{ needs.resolve-projects.outputs.version }}
+
+          npx conventional-changelog -p angular -i CHANGELOG.md -s || echo "No changelog changes"
+
+          git add CHANGELOG.md
+          git commit -m "docs: update changelog for $PROJECT@$VERSION" || echo "No changelog changes"
+
+      - name: Push to readonly repository
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
+        run: |
+          PROJECT=${{ matrix.project }}
+          VERSION=${{ needs.resolve-projects.outputs.version }}
+
+          git remote remove target 2>/dev/null || true
+          git remote add target https://x-access-token:${TOKEN}@github.com/kshapka-bcgov/${PROJECT}.git
+
+          # Push built code to main
+          git push target split-branch:main
+
+          # Tag release
+          git tag "${PROJECT}-v${VERSION}"
+          git push target "${PROJECT}-v${VERSION}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ matrix.project }}-v${{ needs.resolve-projects.outputs.version }}
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
+
+          

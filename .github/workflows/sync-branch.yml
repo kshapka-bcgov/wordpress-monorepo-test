@@ -68,5 +68,5 @@ jobs:
                 git commit -m "chore: publish build output" || echo "No changes"
 
                 git remote remove target 2>/dev/null || true
-                git remote add target https://x-access-token:${{ secrets.PUBLISH_REPO_TOKEN }}@github.com/bcgov/${{ matrix.project }}.git
+                git remote add target https://x-access-token:${{ secrets.PUBLISH_REPO_TOKEN }}@github.com/kshapka-bcgov/${{ matrix.project }}.git
                 git push -f target split-branch:${{ github.head_ref || github.ref_name }} 
