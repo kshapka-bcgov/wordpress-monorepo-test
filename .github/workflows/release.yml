@@ -24,7 +24,7 @@ permissions:
 jobs:
   detect-affected-projects:
     name: Detect affected sub-projects
-    if: ${{ inputs.projects == '' }}
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.projects == '' }}
     uses: ./.github/workflows/detect-affected-projects.yml
 
   resolve-projects:
@@ -32,8 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect-affected-projects
     outputs:
-      projects: ${{ steps.set.outputs.projects }}
-      version: ${{ steps.set.outputs.version }}
+      projects: '["bcgov-wordpress-blocks"]'
+      version: "0.0.1"
     steps:
       - name: Resolve projects + version
         id: set
