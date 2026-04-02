@@ -39,8 +39,10 @@ jobs:
         id: set
         shell: bash
         run: |
-          echo "Resolved projects: $PROJECTS"
-          echo "Resolved version: $VERSION"
+          if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
+            echo "ERROR: No projects resolved"
+            exit 1
+          fi
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
             PROJECTS='${{ inputs.projects }}'
           else
