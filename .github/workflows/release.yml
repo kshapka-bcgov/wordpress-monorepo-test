@@ -123,6 +123,11 @@ jobs:
           git add dist
           git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
 
+          PROJECT=${{ matrix.project }}
+          LAST_TAG=$(git tag --list "${PROJECT}-v*" --sort=-v:refname | head -n 1)
+          echo "Last tag: $LAST_TAG"
+          ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
+
       - name: Generate changelog
         shell: bash
         run: |
@@ -133,18 +138,42 @@ jobs:
         env:
           TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
         run: |
-          PROJECT=${{ matrix.project }}
-          VERSION=${{ needs.resolve-projects.outputs.version }}
+            PROJECT=${{ matrix.project }}
+            VERSION=${{ needs.resolve-projects.outputs.version }}
 
-          git remote remove target 2>/dev/null || true
-          git remote add target https://x-access-token:${TOKEN}@github.com/kshapka-bcgov/${PROJECT}.git
+            ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
 
-          # Push built code to main
-          git push target split-branch:main
+            LAST_TAG=$(git tag --list "${PROJECT}-v*" --sort=-v:refname | head -n 1)
 
-          # Tag release
-          git tag "${PROJECT}-v${VERSION}"
-          git push target "${PROJECT}-v${VERSION}"
+            echo "Generating changelog for $PROJECT"
+            echo "From: ${LAST_TAG:-<start>} → HEAD"
+
+            # Build commit range
+            if [[ -n "$LAST_TAG" ]]; then
+            RANGE="$LAST_TAG..HEAD"
+            else
+            RANGE=""
+            fi
+
+            # Generate filtered commits
+            git log $RANGE --pretty=format:"%s" -- "$ROOT" > commits.txt
+
+            if [[ ! -s commits.txt ]]; then
+            echo "No relevant commits for $PROJECT"
+            exit 0
+            fi
+
+            # Generate changelog
+            npx conventional-changelog -p angular \
+            -i CHANGELOG.md \
+            -s \
+            --commit-path "$ROOT"
+
+            # Commit if exists
+            if [ -f CHANGELOG.md ]; then
+            git add CHANGELOG.md
+            git commit -m "docs(release): update changelog for $PROJECT@$VERSION" || echo "No changes"
+            fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
