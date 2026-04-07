@@ -2,15 +2,8 @@ name: Release projects to read-only repositories
 
 on:
   release:
-
-  workflow_dispatch:
-    inputs:
-      projects:
-        description: "JSON array of projects (optional, overrides affected detection)"
-        required: false
-      version:
-        description: "Release version (e.g. 1.2.0)"
-        required: false   # Optional; will default to release tag if not provided
+    types:
+      - published   # triggers when a release is published in the monorepo
 
 concurrency:
   group: release-${{ github.ref }}
@@ -22,54 +15,46 @@ permissions:
 jobs:
   detect-affected-projects:
     name: Detect affected projects
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.projects == '' }}
-    uses: ./.github/workflows/detect-affected-projects.yml
-
-  resolve-projects:
-    name: Resolve projects and version
     runs-on: ubuntu-latest
-    needs: detect-affected-projects
-    if: always()
     outputs:
-      projects: ${{ steps.set.outputs.projects }}
-      version: ${{ steps.set.outputs.version }}
+      projects: ${{ steps.compute.outputs.projects }}
     steps:
-      - name: Resolve projects + version
-        id: set
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Compute projects
+        id: compute
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
-            PROJECTS='${{ inputs.projects }}'
-          else
-            PROJECTS='${{ needs.detect-affected-projects.outputs.projects }}'
-          fi
-
-          # Ensure PROJECTS is always a JSON array string
-          if [[ -z "$PROJECTS" || "$PROJECTS" == "null" ]]; then
-            PROJECTS="[]"
-          fi
-
-          # Determine version from workflow_dispatch input or release tag
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${{ github.event.release.tag_name }}"
-          fi
-
-          echo "Resolved projects: $PROJECTS"
-          echo "Resolved version: $VERSION"
-
+          # For now, release all projects in this example
+          PROJECTS='["bcgov-wordpress-blocks"]'
           echo "projects=$PROJECTS" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   build-and-release:
     name: Build & release ${{ matrix.project }}
-    needs: resolve-projects
+    needs: detect-affected-projects
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJSON(needs.resolve-projects.outputs.projects) }}
+        project: ${{ fromJSON(needs.detect-affected-projects.outputs.projects) }}
 
     permissions:
       contents: write
@@ -100,22 +85,19 @@ jobs:
       - name: Build project
         run: npx nx run ${{ matrix.project }}:build
 
-      - name: Prepare subtree for readonly repo
+      - name: Prepare subtree and build for readonly repo
         shell: bash
         run: |
           set -e
 
           PROJECT=${{ matrix.project }}
-          VERSION=${{ needs.resolve-projects.outputs.version }}
-
+          TAG=${{ github.event.release.tag_name }}
           ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
+
           echo "Building project $PROJECT at root: $ROOT"
 
-          # Ensure build output exists
-          if [ ! -d "$ROOT/dist" ]; then
-            echo "Error: dist/ folder not found after build"
-            exit 1
-          fi
+          npx nx run $PROJECT:build
+          echo "Build complete."
 
           git subtree split -P "$ROOT" -b split-branch
           git checkout split-branch
@@ -123,32 +105,30 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Copy dist to repo root
-          rm -rf dist || true
-          cp -R "$ROOT/dist" ./dist
+          # Copy build output
+          if [ -d "$ROOT/dist" ]; then
+            cp -R "$ROOT/dist" ./dist
+          fi
 
           git add dist
-          git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
+          git commit -m "chore(release): build $PROJECT@$TAG" || echo "No build changes"
 
-          echo "Subtree branch prepared with build output."
-
-      - name: Push subtree to readonly repository
+      - name: Push to readonly repository
         shell: bash
         env:
           TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
         run: |
           PROJECT=${{ matrix.project }}
-
           git remote remove target 2>/dev/null || true
           git remote add target https://x-access-token:${TOKEN}@github.com/kshapka-bcgov/${PROJECT}.git
-          git push -f target split-branch:main
+          git push -f target split-branch:${{ github.event.release.tag_name }}
 
       - name: Create GitHub Release in readonly repo
         uses: softprops/action-gh-release@v1
         with:
           repository: kshapka-bcgov/${{ matrix.project }}
           tag_name: ${{ github.event.release.tag_name }}
-          name: ${{ github.event.release.name }}
+          name: ${{ github.event.release.name || github.event.release.tag_name }}
           body: ${{ github.event.release.body }}
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
