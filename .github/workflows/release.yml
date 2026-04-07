@@ -66,7 +66,6 @@ jobs:
   build-and-release:
     name: Build and release ${{ matrix.project }}
     needs: resolve-projects
-    if: ${{ needs.resolve-projects.outputs.projects != '' && needs.resolve-projects.outputs.projects != '[]' }}
     runs-on: ubuntu-latest
 
     strategy:
