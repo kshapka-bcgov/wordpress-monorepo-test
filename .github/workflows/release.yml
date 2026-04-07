@@ -118,11 +118,11 @@ jobs:
           git add dist
           git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
 
-      - name: Generate changelog
-        uses: mikeal/conventional-changelog-action@v2
-        with:
-          commit-path: ${{ matrix.project }}
-          release-version: ${{ needs.resolve-projects.outputs.version }}
+      - name: Build Changelog
+        id: github_release
+        uses: mikepenz/release-changelog-builder-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
 
       - name: Push to readonly repository
         shell: bash
@@ -140,6 +140,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ matrix.project }}-v${{ needs.resolve-projects.outputs.version }}
-          body_path: CHANGELOG.md
+          body: ${{steps.github_release.outputs.changelog}}
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
