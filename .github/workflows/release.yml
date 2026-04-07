@@ -13,48 +13,44 @@ permissions:
   contents: read
 
 jobs:
-  detect-affected-projects:
-    name: Detect affected projects
+  detect-project-from-tag:
+    name: Detect project from release tag
     runs-on: ubuntu-latest
     outputs:
-      projects: ${{ steps.compute.outputs.projects }}
+      project: ${{ steps.detect.outputs.project }}
+      version: ${{ steps.detect.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-          cache: true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Compute projects
-        id: compute
+      - name: Detect project and version
+        id: detect
         shell: bash
         run: |
-          # For now, release all projects in this example
-          PROJECTS='["bcgov-wordpress-blocks"]'
-          echo "projects=$PROJECTS" >> "$GITHUB_OUTPUT"
+          MONO_TAG=${{ github.event.release.tag_name }}
+
+          # Extract project name (everything before last hyphen)
+          PROJECT="${MONO_TAG%-*}"
+
+          # Extract version (everything after last hyphen)
+          VERSION="${MONO_TAG##*-}"
+
+          echo "Detected project: $PROJECT"
+          echo "Detected version: $VERSION"
+
+          echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   build-and-release:
-    name: Build & release ${{ matrix.project }}
-    needs: detect-affected-projects
+    name: Build & release ${{ needs.detect-project-from-tag.outputs.project }}
+    needs: detect-project-from-tag
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJSON(needs.detect-affected-projects.outputs.projects) }}
+        project: ${{ fromJSON(format('["{0}"]', needs.detect-project-from-tag.outputs.project)) }}
 
     permissions:
       contents: write
@@ -91,7 +87,7 @@ jobs:
           set -e
 
           PROJECT=${{ matrix.project }}
-          MONO_TAG=${{ github.event.release.tag_name }}
+          VERSION=${{ needs.detect-project-from-tag.outputs.version }}
           ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
 
           echo "Building project $PROJECT at root: $ROOT"
@@ -111,14 +107,11 @@ jobs:
           fi
 
           git add dist
-          git commit -m "chore(release): build $PROJECT@$MONO_TAG" || echo "No build changes"
-
-          # Strip project prefix from monorepo tag for readonly repo
-          CLEAN_TAG="${MONO_TAG##*-}"
-          echo "CLEAN_TAG=$CLEAN_TAG" >> $GITHUB_ENV
+          git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
 
           # Create local tag for push
-          git tag "$CLEAN_TAG"
+          git tag "v$VERSION"
+          echo "CLEAN_TAG=v$VERSION" >> $GITHUB_ENV
 
       - name: Push to readonly repository
         shell: bash
@@ -126,6 +119,8 @@ jobs:
           TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
         run: |
           PROJECT=${{ matrix.project }}
+          CLEAN_TAG=${{ env.CLEAN_TAG }}
+
           git remote remove target 2>/dev/null || true
           git remote add target https://x-access-token:${TOKEN}@github.com/kshapka-bcgov/${PROJECT}.git
 
