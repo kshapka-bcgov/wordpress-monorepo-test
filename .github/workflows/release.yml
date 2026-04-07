@@ -43,12 +43,12 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
             PROJECTS='${{ inputs.projects }}'
           else
-            PROJECTS='${{ needs.detect-affected-projects.outputs.projects || "[]" }}'
+            PROJECTS='${{ needs.detect-affected-projects.outputs.projects }}'
           fi
 
-          if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
-            echo "ERROR: No projects resolved"
-            exit 1
+          # Ensure PROJECTS is always a JSON array string
+          if [[ -z "$PROJECTS" || "$PROJECTS" == "null" ]]; then
+            PROJECTS="[]"
           fi
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -56,6 +56,9 @@ jobs:
           else
             VERSION="${GITHUB_REF_NAME##*-v}"
           fi
+
+          echo "Resolved projects: $PROJECTS"
+          echo "Resolved version: $VERSION"
 
           echo "projects=$PROJECTS" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -117,7 +120,7 @@ jobs:
       - name: Generate changelog
         uses: mikeal/conventional-changelog-action@v2
         with:
-          commit-path: ${{ steps.build.outputs.ROOT || '' }}
+          commit-path: ${{ matrix.project }}
           release-version: ${{ needs.resolve-projects.outputs.version }}
 
       - name: Push to readonly repository
