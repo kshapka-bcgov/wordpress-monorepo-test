@@ -3,7 +3,7 @@ name: Release projects to read-only repositories
 on:
   release:
     types:
-      - published   # triggers when a release is published in the monorepo
+      - published
 
 concurrency:
   group: release-${{ github.ref }}
@@ -91,7 +91,7 @@ jobs:
           set -e
 
           PROJECT=${{ matrix.project }}
-          TAG=${{ github.event.release.tag_name }}
+          MONO_TAG=${{ github.event.release.tag_name }}
           ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
 
           echo "Building project $PROJECT at root: $ROOT"
@@ -111,12 +111,14 @@ jobs:
           fi
 
           git add dist
-          git commit -m "chore(release): build $PROJECT@$TAG" || echo "No build changes"
+          git commit -m "chore(release): build $PROJECT@$MONO_TAG" || echo "No build changes"
 
           # Strip project prefix from monorepo tag for readonly repo
-          CLEAN_TAG="${TAG##*-}"
-          CLEAN_TAG="${CLEAN_TAG}"
+          CLEAN_TAG="${MONO_TAG#*-}"
           echo "CLEAN_TAG=$CLEAN_TAG" >> $GITHUB_ENV
+
+          # Create local tag for push
+          git tag "$CLEAN_TAG"
 
       - name: Push to readonly repository
         shell: bash
@@ -126,8 +128,12 @@ jobs:
           PROJECT=${{ matrix.project }}
           git remote remove target 2>/dev/null || true
           git remote add target https://x-access-token:${TOKEN}@github.com/kshapka-bcgov/${PROJECT}.git
+
+          # Push split branch to main
           git push -f target split-branch:main
-          git push -f target "$CLEAN_TAG"
+
+          # Push the non-scoped tag to readonly repo
+          git push target "$CLEAN_TAG"
 
       - name: Create GitHub Release in readonly repo
         uses: softprops/action-gh-release@v1
