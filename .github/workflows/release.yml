@@ -124,6 +124,9 @@ jobs:
           git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
 
           PROJECT=${{ matrix.project }}
+          echo "NX OUTPUT:"
+          npx nx show project $PROJECT --json
+          
           LAST_TAG=$(git tag --list "${PROJECT}-v*" --sort=-v:refname | head -n 1)
           echo "Last tag: $LAST_TAG"
           ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
