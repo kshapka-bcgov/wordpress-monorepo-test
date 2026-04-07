@@ -31,6 +31,7 @@ jobs:
     name: Resolve projects for release
     runs-on: ubuntu-latest
     needs: detect-affected-projects
+    if: always()
     outputs:
       projects: '["bcgov-wordpress-blocks"]'
       version: "0.0.1"
@@ -46,7 +47,12 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
             PROJECTS='${{ inputs.projects }}'
           else
-            PROJECTS='${{ needs.detect-affected-projects.outputs.projects }}'
+            if [[ "${{ inputs.projects }}" != "" ]]; then
+                PROJECTS='${{ inputs.projects }}'
+            else
+                PROJECTS='${{ needs.detect-affected-projects.outputs.projects || '[]' }}'
+            fi
+            
           fi
 
           if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
