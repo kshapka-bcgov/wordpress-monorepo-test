@@ -113,6 +113,10 @@ jobs:
           git add dist
           git commit -m "chore(release): build $PROJECT@$TAG" || echo "No build changes"
 
+          CLEAN_TAG=${MONO_TAG#*-}
+          CLEAN_TAG="v${CLEAN_TAG}"
+          echo "CLEAN_TAG=$CLEAN_TAG" >> $GITHUB_ENV
+
       - name: Push to readonly repository
         shell: bash
         env:
@@ -121,14 +125,15 @@ jobs:
           PROJECT=${{ matrix.project }}
           git remote remove target 2>/dev/null || true
           git remote add target https://x-access-token:${TOKEN}@github.com/kshapka-bcgov/${PROJECT}.git
-          git push -f target split-branch:${{ github.event.release.tag_name }}
+          git push -f target split-branch:main
+          git push -f target "$CLEAN_TAG"
 
       - name: Create GitHub Release in readonly repo
         uses: softprops/action-gh-release@v1
         with:
           repository: kshapka-bcgov/${{ matrix.project }}
-          tag_name: ${{ github.event.release.tag_name }}
-          name: ${{ github.event.release.name || github.event.release.tag_name }}
+          tag_name: ${{ env.CLEAN_TAG }}
+          name: ${{ github.event.release.name || env.CLEAN_TAG }}
           body: ${{ github.event.release.body }}
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
