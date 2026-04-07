@@ -102,21 +102,47 @@ jobs:
       - name: Build project
         run: npx nx run ${{ matrix.project }}:build
 
-      - name: Prepare subtree for readonly repo
+      - name: Prepare subtree and build for readonly repo
         shell: bash
         run: |
+          set -e
+
           PROJECT=${{ matrix.project }}
           VERSION=${{ needs.resolve-projects.outputs.version }}
+
+          # Determine project root
           ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
 
+          echo "Building project $PROJECT at root: $ROOT"
+
+          # Build the project first in the main branch
+          npx nx run $PROJECT:build
+          echo "Build complete. Checking for dist/ directory..."
+          
+          if [ ! -d "$ROOT/dist" ] && [ ! -d "dist" ]; then
+            echo "Error: dist/ folder not found after build"
+            exit 1
+          fi
+
+          # Create a split branch from the project root
           git subtree split -P "$ROOT" -b split-branch
           git checkout split-branch
 
+          # Configure git author
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Copy build output into the split branch if needed
+          # Nx typically outputs to $ROOT/dist
+          if [ -d "$ROOT/dist" ]; then
+            cp -R "$ROOT/dist" ./dist
+          fi
+
+          # Commit build artifacts
           git add dist
           git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
+
+          echo "Subtree branch prepared with build output."
 
       - name: Build Changelog
         id: github_release
