@@ -61,7 +61,7 @@ jobs:
 
             echo "Resolved VERSION: $VERSION"
 
-            echo "projects=$PROJECTS" >> "$GITHUB_OUTPUT"
+            printf "projects=%s\n" "$PROJECTS" >> "$GITHUB_OUTPUT"
             echo "version=$VERSION" >> "$GITHUB_OUTPUT"
   build-and-release:
     name: Build and release ${{ matrix.project }}
