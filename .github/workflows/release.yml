@@ -1,6 +1,9 @@
 name: Release projects to standalone repositories
 
 on:
+  release:
+    types: [created]   # Triggered when a release is created in the monorepo
+
   workflow_dispatch:
     inputs:
       projects:
@@ -8,11 +11,7 @@ on:
         required: false
       version:
         description: "Release version (e.g. 1.2.0)"
-        required: true
-
-  push:
-    tags:
-      - "*-v*"
+        required: false   # Optional; will default to release tag if not provided
 
 concurrency:
   group: release-${{ github.ref }}
@@ -51,10 +50,11 @@ jobs:
             PROJECTS="[]"
           fi
 
+          # Determine version from workflow_dispatch input or release tag
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             VERSION="${{ inputs.version }}"
           else
-            VERSION="${GITHUB_REF_NAME##*-v}"
+            VERSION="${{ github.event.release.tag_name }}"
           fi
 
           echo "Resolved projects: $PROJECTS"
@@ -66,7 +66,6 @@ jobs:
   build-and-release:
     name: Build & release ${{ matrix.project }}
     needs: resolve-projects
-    if: always()
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -102,7 +101,7 @@ jobs:
       - name: Build project
         run: npx nx run ${{ matrix.project }}:build
 
-      - name: Prepare subtree and build for readonly repo
+      - name: Prepare subtree for readonly repo
         shell: bash
         run: |
           set -e
@@ -113,10 +112,8 @@ jobs:
           ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
           echo "Building project $PROJECT at root: $ROOT"
 
-          npx nx run $PROJECT:build
-          echo "Build complete. Checking for dist/ directory..."
-          
-          if [ ! -d "$ROOT/dist" ] && [ ! -d "dist" ]; then
+          # Ensure build output exists
+          if [ ! -d "$ROOT/dist" ]; then
             echo "Error: dist/ folder not found after build"
             exit 1
           fi
@@ -127,38 +124,32 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if [ -d "$ROOT/dist" ]; then
-            cp -R "$ROOT/dist" ./dist
-          fi
+          # Copy dist to repo root
+          rm -rf dist || true
+          cp -R "$ROOT/dist" ./dist
 
           git add dist
           git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
 
           echo "Subtree branch prepared with build output."
 
-      - name: Build Changelog
-        id: github_release
-        uses: mikepenz/release-changelog-builder-action@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
-
-      - name: Push to readonly repository
+      - name: Push subtree to readonly repository
         shell: bash
         env:
           TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
         run: |
           PROJECT=${{ matrix.project }}
-          VERSION=${{ needs.resolve-projects.outputs.version }}
 
           git remote remove target 2>/dev/null || true
           git remote add target https://x-access-token:${TOKEN}@github.com/kshapka-bcgov/${PROJECT}.git
-          git push -f target split-branch:${{ github.head_ref || github.ref_name }}
+          git push -f target split-branch:main
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release in readonly repo
         uses: softprops/action-gh-release@v1
         with:
           repository: kshapka-bcgov/${{ matrix.project }}
-          tag_name: v${{ needs.resolve-projects.outputs.version }}
-          body: ${{steps.github_release.outputs.changelog}}
+          tag_name: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.name }}
+          body: ${{ github.event.release.body }}
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
