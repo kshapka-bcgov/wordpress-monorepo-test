@@ -23,75 +23,68 @@ permissions:
 
 jobs:
   detect-affected-projects:
-    name: Detect affected sub-projects
+    name: Detect affected projects
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.projects == '' }}
     uses: ./.github/workflows/detect-affected-projects.yml
 
   resolve-projects:
-    name: Resolve projects for release
+    name: Resolve projects and version
     runs-on: ubuntu-latest
     needs: detect-affected-projects
     if: always()
     outputs:
-        projects: ${{ steps.set.outputs.projects }}
-        version: ${{ steps.set.outputs.version }}
+      projects: ${{ steps.set.outputs.projects }}
+      version: ${{ steps.set.outputs.version }}
     steps:
       - name: Resolve projects + version
         id: set
         shell: bash
         run: |
-            if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
             PROJECTS='${{ inputs.projects }}'
-            else
-            PROJECTS='${{ needs.detect-affected-projects.outputs.projects || '[]' }}'
-            fi
+          else
+            PROJECTS='${{ needs.detect-affected-projects.outputs.projects || "[]" }}'
+          fi
 
-            echo "Resolved PROJECTS: $PROJECTS"
-
-            if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
+          if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
             echo "ERROR: No projects resolved"
             exit 1
-            fi
+          fi
 
-            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             VERSION="${{ inputs.version }}"
-            else
+          else
             VERSION="${GITHUB_REF_NAME##*-v}"
-            fi
+          fi
 
-            echo "Resolved VERSION: $VERSION"
+          echo "projects=$PROJECTS" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-            printf "projects=%s\n" "$PROJECTS" >> "$GITHUB_OUTPUT"
-            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
   build-and-release:
-    name: Build and release ${{ matrix.project }}
+    name: Build & release ${{ matrix.project }}
     needs: resolve-projects
-    if: always()
     runs-on: ubuntu-latest
-
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJSON(needs.resolve-projects.outputs.projects || '[]') }}
+        project: ${{ fromJSON(needs.resolve-projects.outputs.projects) }}
 
     permissions:
       contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Install pnpm
+      - name: Setup Node.js and PNPM
         uses: pnpm/action-setup@v4
         with:
           version: 10
           cache: true
-
-      - name: Setup Node.js 24
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: "pnpm"
@@ -102,13 +95,14 @@ jobs:
       - name: Install Composer dependencies
         run: npx nx run ${{ matrix.project }}:composer-install
 
-      - name: Prepare subtree and build
-        id: build
+      - name: Build project
+        run: npx nx run ${{ matrix.project }}:build
+
+      - name: Prepare subtree for readonly repo
         shell: bash
         run: |
           PROJECT=${{ matrix.project }}
           VERSION=${{ needs.resolve-projects.outputs.version }}
-
           ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
 
           git subtree split -P "$ROOT" -b split-branch
@@ -117,66 +111,26 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Build (same as existing workflow)
-          npx wp-scripts build --blocks-manifest --output-path=dist
-
           git add dist
           git commit -m "chore(release): build $PROJECT@$VERSION" || echo "No build changes"
 
-          PROJECT=${{ matrix.project }}
-          echo "NX OUTPUT:"
-          npx nx show project $PROJECT --json
-          
-          LAST_TAG=$(git tag --list "${PROJECT}-v*" --sort=-v:refname | head -n 1)
-          echo "Last tag: $LAST_TAG"
-          ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
-
       - name: Generate changelog
-        shell: bash
-        run: |
-          echo "Skipping changelog generation"
+        uses: mikeal/conventional-changelog-action@v2
+        with:
+          commit-path: ${{ steps.build.outputs.ROOT || '' }}
+          release-version: ${{ needs.resolve-projects.outputs.version }}
 
       - name: Push to readonly repository
         shell: bash
         env:
           TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
         run: |
-            PROJECT=${{ matrix.project }}
-            VERSION=${{ needs.resolve-projects.outputs.version }}
+          PROJECT=${{ matrix.project }}
+          VERSION=${{ needs.resolve-projects.outputs.version }}
 
-            ROOT=$(npx nx show project $PROJECT --json | jq -r .root)
-
-            LAST_TAG=$(git tag --list "${PROJECT}-v*" --sort=-v:refname | head -n 1)
-
-            echo "Generating changelog for $PROJECT"
-            echo "From: ${LAST_TAG:-<start>} → HEAD"
-
-            # Build commit range
-            if [[ -n "$LAST_TAG" ]]; then
-            RANGE="$LAST_TAG..HEAD"
-            else
-            RANGE=""
-            fi
-
-            # Generate filtered commits
-            git log $RANGE --pretty=format:"%s" -- "$ROOT" > commits.txt
-
-            if [[ ! -s commits.txt ]]; then
-            echo "No relevant commits for $PROJECT"
-            exit 0
-            fi
-
-            # Generate changelog
-            npx conventional-changelog -p angular \
-            -i CHANGELOG.md \
-            -s \
-            --commit-path "$ROOT"
-
-            # Commit if exists
-            if [ -f CHANGELOG.md ]; then
-            git add CHANGELOG.md
-            git commit -m "docs(release): update changelog for $PROJECT@$VERSION" || echo "No changes"
-            fi
+          git remote remove target 2>/dev/null || true
+          git remote add target https://x-access-token:${TOKEN}@github.com/kshapka-bcgov/${PROJECT}.git
+          git push -f target split-branch:${{ github.head_ref || github.ref_name }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -185,5 +139,3 @@ jobs:
           body_path: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
-
-          
