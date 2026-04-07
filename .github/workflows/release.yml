@@ -40,37 +40,29 @@ jobs:
         id: set
         shell: bash
         run: |
-          if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
+            PROJECTS='${{ inputs.projects }}'
+            else
+            PROJECTS='${{ needs.detect-affected-projects.outputs.projects || '[]' }}'
+            fi
+
+            echo "Resolved PROJECTS: $PROJECTS"
+
+            if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
             echo "ERROR: No projects resolved"
             exit 1
-          fi
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.projects }}" != "" ]]; then
-            PROJECTS='${{ inputs.projects }}'
-          else
-            if [[ "${{ inputs.projects }}" != "" ]]; then
-                PROJECTS='${{ inputs.projects }}'
-            else
-                PROJECTS='${{ needs.detect-affected-projects.outputs.projects || '[]' }}'
             fi
-            
-          fi
 
-          if [[ "$PROJECTS" == "" || "$PROJECTS" == "[]" ]]; then
-            echo "No projects to release"
-            echo "projects=[]" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             VERSION="${{ inputs.version }}"
-          else
-            # Extract version from tag: plugin-a-v1.2.0 → 1.2.0
+            else
             VERSION="${GITHUB_REF_NAME##*-v}"
-          fi
+            fi
 
-          echo "projects=$PROJECTS" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "Resolved VERSION: $VERSION"
 
+            echo "projects=$PROJECTS" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
   build-and-release:
     name: Build and release ${{ matrix.project }}
     needs: resolve-projects
