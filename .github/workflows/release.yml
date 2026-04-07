@@ -126,13 +126,7 @@ jobs:
       - name: Generate changelog
         shell: bash
         run: |
-          PROJECT=${{ matrix.project }}
-          VERSION=${{ needs.resolve-projects.outputs.version }}
-
-          npx conventional-changelog -p angular -i CHANGELOG.md -s || echo "No changelog changes"
-
-          git add CHANGELOG.md
-          git commit -m "docs: update changelog for $PROJECT@$VERSION" || echo "No changelog changes"
+          echo "Skipping changelog generation"
 
       - name: Push to readonly repository
         shell: bash
