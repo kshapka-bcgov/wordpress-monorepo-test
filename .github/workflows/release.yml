@@ -1,4 +1,4 @@
-name: Release projects to standalone repositories
+name: Release projects to read-only repositories
 
 on:
   release:
