@@ -66,6 +66,7 @@ jobs:
   build-and-release:
     name: Build and release ${{ matrix.project }}
     needs: resolve-projects
+    if: always()
     runs-on: ubuntu-latest
 
     strategy:
