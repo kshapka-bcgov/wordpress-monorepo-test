@@ -71,7 +71,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJSON(needs.resolve-projects.outputs.projects) }}
+        project: ${{ fromJSON(needs.resolve-projects.outputs.projects || '[]') }}
 
     permissions:
       contents: write
