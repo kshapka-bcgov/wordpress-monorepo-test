@@ -165,7 +165,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ matrix.project }}-v${{ needs.resolve-projects.outputs.version }}
+          repository: kshapka-bcgov/${{ matrix.project }}
+          tag_name: v${{ needs.resolve-projects.outputs.version }}
           body: ${{steps.github_release.outputs.changelog}}
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_REPO_TOKEN }}
