@@ -33,8 +33,8 @@ jobs:
     needs: detect-affected-projects
     if: always()
     outputs:
-      projects: '["bcgov-wordpress-blocks"]'
-      version: "0.0.1"
+        projects: ${{ steps.set.outputs.projects }}
+        version: ${{ steps.set.outputs.version }}
     steps:
       - name: Resolve projects + version
         id: set
