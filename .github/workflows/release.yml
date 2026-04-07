@@ -114,7 +114,7 @@ jobs:
           git commit -m "chore(release): build $PROJECT@$TAG" || echo "No build changes"
 
           # Strip project prefix from monorepo tag for readonly repo
-          CLEAN_TAG=${TAG#*-}
+          CLEAN_TAG="${TAG##*-}"
           CLEAN_TAG="v${CLEAN_TAG}"
           echo "CLEAN_TAG=$CLEAN_TAG" >> $GITHUB_ENV
 
