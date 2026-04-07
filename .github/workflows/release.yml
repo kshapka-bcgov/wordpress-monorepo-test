@@ -115,7 +115,7 @@ jobs:
 
           # Strip project prefix from monorepo tag for readonly repo
           CLEAN_TAG="${TAG##*-}"
-          CLEAN_TAG="v${CLEAN_TAG}"
+          CLEAN_TAG="${CLEAN_TAG}"
           echo "CLEAN_TAG=$CLEAN_TAG" >> $GITHUB_ENV
 
       - name: Push to readonly repository
