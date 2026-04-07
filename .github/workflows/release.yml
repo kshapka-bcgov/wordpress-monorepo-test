@@ -114,7 +114,7 @@ jobs:
           git commit -m "chore(release): build $PROJECT@$MONO_TAG" || echo "No build changes"
 
           # Strip project prefix from monorepo tag for readonly repo
-          CLEAN_TAG="${MONO_TAG#*-}"
+          CLEAN_TAG="${MONO_TAG##*-}"
           echo "CLEAN_TAG=$CLEAN_TAG" >> $GITHUB_ENV
 
           # Create local tag for push
